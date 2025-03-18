@@ -3,26 +3,23 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
 import math
+from sklearn.linear_model import LinearRegression
+import statsmodels.api as sm
 
-
+# 하버사인 거리 계산 함수
 def haversine(lat1, lon1, lat2, lon2):
     R = 6371  # 지구 반지름 (단위: km)
-
-    # 위도와 경도를 라디안(radian)으로 변환
-    phi1 = math.radians(lat1)
-    phi2 = math.radians(lat2)
+    phi1, phi2 = map(math.radians, [lat1, lat2])
     delta_phi = math.radians(lat2 - lat1)
     delta_lambda = math.radians(lon2 - lon1)
 
-    # 하버사인 공식 적용
     a = math.sin(delta_phi / 2.0) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(delta_lambda / 2.0) ** 2
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
-    # 최종 거리 계산
     distance = R * c
     return distance  # 단위: km
 
-
+# 데이터 로드
 data_path = "./data/train.csv"
 df = pd.read_csv(data_path)
 
@@ -32,40 +29,48 @@ df = df.dropna()
 # 이상치 제거: 음수 승객 수 제거
 df = df[df["passenger_count"] > 0]
 
-# 시각화 - 승객 수 vs. 운임 요금 (regplot)
-plt.figure(figsize=(15,10))
-sns.regplot(x=df["passenger_count"], y=df["fare_amount"], scatter_kws={"alpha": 0.5}, line_kws={"color": "red"})
-
-# 그래프 설정
-plt.xlabel("Passenger Count")
-plt.ylabel("Fare Amount")
-plt.title("Taxi Fare vs. Passenger Count (Regression Plot)")
-plt.grid(True)
-
-# 그래프 출력
-plt.show()
-plt.savefig("q7_0318_PassengerVSFareamount.png") # 탑승 인원대비 운임요금, regplot
-
-
-
-
-
-# 거리차이 계산
+# 거리차이 계산 (apply 사용)
 df["Distance"] = df.apply(lambda row: haversine(row["dropoff_latitude"], row["dropoff_longitude"],
                                                  row["pickup_latitude"], row["pickup_longitude"]), axis=1)
 
-print(df["Distance"])
+# 🚀 **1️⃣ 사이킷런 선형 회귀 분석**
+X = df[["Distance"]]  # 독립 변수
+y = df["fare_amount"]  # 종속 변수
 
-# 거리차이 vs. 운임 요금 (regplot)
+# 모델 학습
+model = LinearRegression()
+model.fit(X, y)
+
+# 회귀 계수 및 절편 출력
+print(f"기울기 (Slope): {model.coef_[0]}")
+print(f"절편 (Intercept): {model.intercept_}")
+
+# 예측값 생성
+df["Predicted_Fare"] = model.predict(X)
+
+# 🚀 **2️⃣ OLS 회귀 분석 (Statsmodels)**
+X_ols = sm.add_constant(X)  # 절편 추가
+ols_model = sm.OLS(y, X_ols).fit()
+
+# OLS 결과 출력
+print(ols_model.summary())
+
+# 🚀 **3️⃣ 거리 대비 운임 요금 선형 회귀 그래프 출력**
 plt.figure(figsize=(10, 6))
-sns.regplot(x=df["Distance"], y=df["fare_amount"], scatter_kws={"alpha": 0.5}, line_kws={"color": "red"})
+
+# 실제 데이터 점
+sns.scatterplot(x=df["Distance"], y=df["fare_amount"], alpha=0.5, label="Actual Data")
+
+# 회귀선 (사이킷런)
+plt.plot(df["Distance"], df["Predicted_Fare"], color="red", label="Linear Regression (Sklearn)")
 
 # 그래프 설정
-plt.xlabel("Distance Difference")
-plt.ylabel("Fare Amount")
-plt.title("Taxi Fare vs. Distance Difference (Regression Plot)")
+plt.xlabel("Distance (km)")
+plt.ylabel("Fare Amount ($)")
+plt.title("Taxi Fare vs. Distance (Linear Regression)")
+plt.legend()
 plt.grid(True)
 
 # 그래프 출력
+plt.savefig("q7_0318_FareVSDistance_Regression.png")  # 결과 저장
 plt.show()
-plt.savefig("q7_0318_FareVSDistance.png") # 탑승 거리 대비 운임요금, regplot
