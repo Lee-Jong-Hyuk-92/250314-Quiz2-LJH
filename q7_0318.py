@@ -74,3 +74,6 @@ plt.grid(True)
 # 그래프 출력
 plt.savefig("q7_0318_FareVSDistance_Regression.png")  # 결과 저장
 plt.show()
+
+
+print(df[df["Distance"]>50])
