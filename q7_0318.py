@@ -33,7 +33,7 @@ df = df[df["passenger_count"] > 0]
 df["Distance"] = df.apply(lambda row: haversine(row["dropoff_latitude"], row["dropoff_longitude"],
                                                  row["pickup_latitude"], row["pickup_longitude"]), axis=1)
 
-# 🚀 **1️⃣ 사이킷런 선형 회귀 분석**
+# 사이킷런 선형 회귀 분석**
 X = df[["Distance"]]  # 독립 변수
 y = df["fare_amount"]  # 종속 변수
 
@@ -48,14 +48,13 @@ print(f"절편 (Intercept): {model.intercept_}")
 # 예측값 생성
 df["Predicted_Fare"] = model.predict(X)
 
-# 🚀 **2️⃣ OLS 회귀 분석 (Statsmodels)**
 X_ols = sm.add_constant(X)  # 절편 추가
 ols_model = sm.OLS(y, X_ols).fit()
 
 # OLS 결과 출력
 print(ols_model.summary())
 
-# 🚀 **3️⃣ 거리 대비 운임 요금 선형 회귀 그래프 출력**
+# 거리 대비 운임 요금 선형 회귀 그래프 출력**
 plt.figure(figsize=(10, 6))
 
 # 실제 데이터 점
